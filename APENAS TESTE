@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Banco Milan - Sistema Completo</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet" />
+<style>
+    roda esse
+{ margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Poppins', sans-serif; background: linear-gradient(135deg, #0f172a, #1e293b); color: #fff; min-height: 100vh; display: flex; flex-direction: column; }
+  header { text-align: center; padding: 30px 20px; }.logo { font-size: 2.4em; font-weight: 700; color: #facc15; }.slogan { color: #94a3b8; font-size: 1em; margin-top: 5px; }
+  main { flex: 1; display: flex; justify-content: center; align-items: center; padding: 20px; }.box { background-color: rgba(30, 41, 59, 0.95); padding: 25px; border-radius: 15px; width: 100%; max-width: 450px; box-shadow: 0 0 15px rgba(0,0,0,0.6); animation: fadeIn 0.6s ease-in-out; }
+  h2 { margin-bottom: 20px; font-weight: 700; text-align: center; }
+  input, button, select { width: 100%; padding: 12px; margin-top: 12px; border-radius: 10px; border: none; font-size: 1em; }
+  input, select { background-color: #334155; color: #fff; outline: none; }
+  button { background-color: #facc15; color: #000; font-weight: 700; cursor: pointer; transition: 0.3s; }button:hover { background-color: #fde047; }.hidden { display: none !important; }.balance { font-size: 1.5em; margin: 15px 0; color: #fbbf24; text-align: center; font-weight: 600; }.history { font-size: 0.9em; color: #cbd5e1; margin-top: 20px; max-height: 180px; overflow-y: auto; }.history ul { list-style: none; padding-left: 10px; }.history li { background: rgba(255,255,255,0.07); padding: 10px; border-radius: 8px; margin-bottom: 7px; font-family: monospace; },
+[21:31]
+7px; font-family: monospace; }
+    footer { text-align: center; font-size: 0.8em; color: #64748b; padding: 15px; }
+    .btn-row { display: flex; gap: 10px; margin-top: 10px; }
+    .btn-row button { flex: 1; }
+    .logout-btn { margin-top: 20px; background-color: #ef4444; color: #fff; font-weight: 700; }
+    .logout-btn:hover { background-color: #f87171; }
+    label { display: block; margin-top: 15px; font-weight: 600; color: #facc15; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+</style>
+</head>
+<body>
+
+<header>
+    <div class="logo"> Banco Milan</div>
+    <div class="slogan">"Seu dinheiro, nossa lealdade — desde 1924"</div>
+</header>
+
+<main>
+
+    <!-- Tela de cadastro -->
+    <div id="register-box" class="box">
+        <h2>Cadastro de Cliente</h2>
+        <input type="text" id="register-username" placeholder="Usuário (mín. 3 caracteres)" />
+        <input type="password" id="register-password" placeholder="Senha (mín. 6 caracteres)" />
+        <input type="number" id="register-initial-balance" placeholder="Saldo inicial (R$)" step="0.01" min="0" />
+        <button onclick="register()">Cadastrar</button>
+        <p style="margin-top:15px; text-align:center; color:#94a3b8; font-size:0.9em;">
+          Já tem conta? <a href="#" onclick="showLogin()" style="color:#facc15;">Entrar aqui</a>
+        </p>
+    </div>
+
+    <!-- Tela de login -->
+    <div id="login-box" class="box hidden">
+        <h2>Login do Cliente</h2>
+        <input type="text" id="username" placeholder="Usuário" />
+        <input type="password" id="password" placeholder="Senha" />
+        <button onclick="login()">Entrar</button>
+        <p style="margin-top:15px; text-align:center; color:#94a3b8; font-size:0.9em;">
+          Não tem conta? <a href="#" onclick="showRegister()" style="color:#facc15;">Cadastre-se aqui</a>
+        </p>
+    </div>
+[21:32]
+<!-- Painel -->
+    <div id="panel-box" class="box hidden">
+        <h2>Bem-vindo, <span id="user-name"></span></h2>
+        <div class="balance">Saldo: R$ <span id="balance">0.00</span></div>
+
+        <label for="transaction-type">Tipo de transação:</label>
+        <select id="transaction-type">
+            <option value="deposit">Depósito</option>
+            <option value="withdraw">Retirada</option>
+            <option value="transfer">Transferência</option>
+        </select>
+
+        <input type="number" id="transaction-amount" placeholder="Valor" step="0.01" min="0" />
+
+        <div id="transfer-to-container" class="hidden">
+            <label for="transfer-to">Transferir para:</label>
+            <select id="transfer-to"></select>
+        </div>
+
+        <button onclick="processTransaction()">Confirmar</button>
+
+        <div class="history">
+            <h3>Histórico:</h3>
+            <ul id="history-list"></ul>
+        </div>
+
+        <button class="logout-btn" onclick="logout()">Sair</button>
+    </div>
+
+</main>
+
+<footer>
+    ⚠ Este site é fictício e usado apenas para fins de roleplay. Nenhuma transação real é realizada.
+</footer>
+
+<script>
+    // Simulação de "banco de dados" local usando sessionStorage
+    // Estrutura:
+    // sessionStorage "users" = JSON.stringify({username: {password, balance, history: []}})
+    // sessionStorage "currentUser" = username logado
+
+    // Inicializa "banco" se não existir
+    if(!sessionStorage.getItem('users')) {
+        const initialUsers = {
+            "nemo": {
+                password: "senha123",
+                balance: 1000,
+                history: []
+            },
+            "ana": {
+                password: "ana456",
+                balance: 500,
+                history: []
+            }
+        };
+        sessionStorage.setItem('users', JSON.stringify(initialUsers));
+    }
+[21:34]
+// Variáveis DOM
+    const loginBox = document.getElementById('login-box');
+    const registerBox = document.getElementById('register-box');
+    const panelBox = document.getElementById('panel-box');
+    const userNameSpan = document.getElementById('user-name');
+    const balanceSpan = document.getElementById('balance');
+    const historyList = document.getElementById('history-list');
+    const transactionTypeSelect = document.getElementById('transaction-type');
+    const transactionAmountInput = document.getElementById('transaction-amount');
+    const transferToContainer = document.getElementById('transfer-to-container');
+    const transferToSelect = document.getElementById('transfer-to');
+
+    // Mostrar painel de transferência só se opção escolhida
+    transactionTypeSelect.addEventListener('change', () => {
+        if(transactionTypeSelect.value === 'transfer') {
+            transferToContainer.classList.remove('hidden');
+            populateTransferUsers();
+        } else {
+            transferToContainer.classList.add('hidden');
+        }
+    });
+
+    // Função para popular select de usuários para transferir
+    function populateTransferUsers() {
+        const users = JSON.parse(sessionStorage.getItem('users'));
+        const currentUser = sessionStorage.getItem('currentUser');
+
+        // Limpar opções existentes
+        transferToSelect.innerHTML = '';
+
+        Object.keys(users).forEach(u => {
+            if(u !== currentUser) {
+                const option = document.createElement('option');
+                option.value = u;
+                option.textContent = u.charAt(0).toUpperCase() + u.slice(1);
+                transferToSelect.appendChild(option);
+            }
+        });
+[21:35]
+// Se não houver usuários disponíveis
+        if(transferToSelect.options.length === 0) {
+            const option = document.createElement('option');
+            option.value = '';
+            option.textContent = 'Nenhum usuário disponível';
+            transferToSelect.appendChild(option);
+        }
+    }
+
+    // Mostrar tela de login
+    function showLogin() {
+        registerBox.classList.add('hidden');
+        loginBox.classList.remove('hidden');
+        panelBox.classList.add('hidden');
+        clearInputs();
+    }
+
+    // Mostrar tela de cadastro
+    function showRegister() {
+        loginBox.classList.add('hidden');
+        registerBox.classList.remove('hidden');
+        panelBox.classList.add('hidden');
+        clearInputs();
+    }
+
+    // Limpar inputs das telas
+    function clearInputs() {
+        [...document.querySelectorAll('input')].forEach(input => input.value = '');
+        [...document.querySelectorAll('select')].forEach(sel => sel.selectedIndex = 0);
+    }
+[21:36]
+// Registrar novo usuário
+    function register() {
+        const username = document.getElementById('register-username').value.trim().toLowerCase();
+        const password = document.getElementById('register-password').value;
+        const initialBalance = parseFloat(document.getElementById('register-initial-balance').value);
+
+        if(username.length < 3) {
+            alert("Usuário deve ter pelo menos 3 caracteres.");
+            return;
+        }
+        if(password.length < 6) {
+            alert("Senha deve ter pelo menos 6 caracteres.");
+            return;
+        }
+        if(isNaN(initialBalance)  initialBalance < 0) {
+            alert("Saldo inicial inválido.");
+            return;
+        }
+
+        let users = JSON.parse(sessionStorage.getItem('users'));
+
+        if(users[username]) {
+            alert("Usuário já existe.");
+            return;
+        }
+
+        users[username] = {
+            password,
+            balance: initialBalance,
+            history: [Conta criada com saldo inicial de R$ ${initialBalance.toFixed(2)}.]
+        };
+
+        sessionStorage.setItem('users', JSON.stringify(users));
+        alert("Cadastro realizado com sucesso! Agora faça login.");
+        showLogin();
+    }
+
+    // Login
+    function login() {
+        const username = document.getElementById('username').value.trim().toLowerCase();
+        const password = document.getElementById('password').value;
+
+        const users = JSON.parse(sessionStorage.getItem('users'));
+
+        if(!users[username]  users[username].password !== password) {
+            alert("Usuário ou senha incorretos.");
+            return;
+        }
+
+        sessionStorage.setItem('currentUser', username);
+        loadUserPanel();
+    }
+NEW
+
+Amor da Minha Vida
+
+VOID
+ — 21:37
+// Carregar painel do usuário
+    function loadUserPanel() {
+        loginBox.classList.add('hidden');
+        registerBox.classList.add('hidden');
+        panelBox.classList.remove('hidden');
+
+        const currentUser = sessionStorage.getItem('currentUser');
+        const users = JSON.parse(sessionStorage.getItem('users'));
+        const userData = users[currentUser];
+
+        userNameSpan.innerText = currentUser.charAt(0).toUpperCase() + currentUser.slice(1);
+        updateBalance(userData.balance);
+        loadHistory(userData.history);
+        clearInputs();
+    }
+
+    // Atualizar saldo na tela
+    function updateBalance(value) {
+        balanceSpan.innerText = value.toFixed(2);
+    }
+
+    // Carregar histórico
+    function loadHistory(history) {
+        historyList.innerHTML = '';
+        history.slice().reverse().forEach(item => {
+            const li = document.createElement('li');
+            li.textContent = item;
+            historyList.appendChild(li);
+        });
+    }
+
+    // Processar transações
+    function processTransaction() {
+        const type = transactionTypeSelect.value;
+        const amount = parseFloat(transactionAmountInput.value);
+        const currentUser = sessionStorage.getItem('currentUser');
+        const users = JSON.parse(sessionStorage.getItem('users'));
+
+        if(isNaN(amount) || amount <= 0) {
+            alert("Digite um valor válido.");
+            return;
+        }
+
+        if(!currentUser) {
+            alert("Erro: usuário não autenticado.");
+            return;
+        }
+[21:38]
+if(!currentUser) {
+            alert("Erro: usuário não autenticado.");
+            return;
+        }
+
+        switch(type) {
+            case 'deposit':
+                users[currentUser].balance += amount;
+                addHistoryEntry(users[currentUser], Depósito de R$ ${amount.toFixed(2)});
+                alert(Depósito de R$ ${amount.toFixed(2)} realizado com sucesso!);
+                break;
+
+            case 'withdraw':
+                if(amount > users[currentUser].balance) {
+                    alert("Saldo insuficiente.");
+                    return;
+                }
+                users[currentUser].balance -= amount;
+                addHistoryEntry(users[currentUser], Retirada de R$ ${amount.toFixed(2)});
+                alert(Retirada de R$ ${amount.toFixed(2)} realizada com sucesso!);
+                break;
+
+            case 'transfer':
+                const toUser = transferToSelect.value;
+                if(toUser === '' || toUser === currentUser) {
+                    alert("Selecione um usuário válido para transferência.");
+                    return;
+                }
+                if(!(toUser in users)) {
+                    alert("Usuário destinatário não encontrado.");
+                    return;
+                }
+                if(amount > users[currentUser].balance) {
+                    alert("Saldo insuficiente para transferência.");
+                    return;
+                }
+
+                // Atualizar saldos
+                users[currentUser].balance -= amount;
+                users[toUser].balance += amount;
+
+                // Registrar histórico nos dois usuários
+                addHistoryEntry(users[currentUser], Transferência de R$ ${amount.toFixed(2)} para ${toUser.charAt(0).toUpperCase() + toUser.slice(1)});
+                addHistoryEntry(users[toUser], Recebido transferência de R$ ${amount.toFixed(2)} de ${currentUser.charAt(0).toUpperCase() + currentUser.slice(1)});
+[21:39]
+alert(Transferência de R$ ${amount.toFixed(2)} para ${toUser.charAt(0).toUpperCase() + toUser.slice(1)} realizada com sucesso!);
+                break;
+
+            default:
+                alert("Tipo de transação inválido.");
+                return;
+        }
+
+        // Salvar dados e atualizar tela
+        sessionStorage.setItem('users', JSON.stringify(users));
+        loadUserPanel();
+    }
+
+    // Adiciona entrada no histórico com timestamp
+    function addHistoryEntry(userData, text) {
+        const now = new Date();
+        const dateTime = now.toLocaleString('pt-BR', { hour12:false });
+        userData.history.push(${dateTime} - ${text} — Saldo: R$ ${userData.balance.toFixed(2)});
+    }
+
+    // Logout
+    function logout() {
+        sessionStorage.removeItem('currentUser');
+        showLogin();
+    }
+
+    // Ao abrir a página, verifica se usuário está logado
+    window.onload = () => {
+        if(sessionStorage.getItem('currentUser')) {
+            loadUserPanel();
+        } else {
+            showLogin();
+        }
+    };
+</script>
+
+</body>
+</html>
